@@ -1,80 +1,150 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useRef, useState } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [permission, requestPermission] = useCameraPermissions();
+  const ref = useRef<CameraView>(null);
+  const [uri, setUri] = useState<string | null>(null);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const [showCamera, setShowCamera] = useState(false);
+
+  const openCamera = async () => {
+    // si no hay permiso, pedirlo antes
+    if (!permission?.granted) {
+      const res = await requestPermission();
+      if (!res.granted) return; // si el usuario no da permiso, salir
+    }
+    setShowCamera(true); // 👈 ahora sí mostrar cámara
+  };
+
+  const takePicture = async () => {
+    const photo = await ref.current?.takePictureAsync();
+
+    // if (photo?.uri) setUri(photo.uri);
+    if (photo?.uri) {
+      try {
+        const result = await TextRecognition.recognize(photo!.uri);
+        // setUri(result.text);
+
+        // Combina los bloques detectados
+        const allBlocks = result.blocks || [];
+
+        console.log(allBlocks);
+
+        // Filtra caracteres individuales en columna
+        const verticalLetters = allBlocks
+          .flatMap((block) =>
+            block.lines.flatMap((line) => line.text.split(''))
+          )
+          .filter((char) => /[A-Za-z0-9]/.test(char));
+
+        // Une los caracteres verticales
+        const combined = verticalLetters.join('');
+
+        setUri(combined);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
+  const renderCamera = () => {
+    if (uri) return null;
+    return (
+      <View style={styles.cameraContainer}>
+        <CameraView
+          ref={ref}
+          mute={false}
+          style={styles.camera}
+          facing="back"
+          mode="picture"
+          responsiveOrientationWhenOrientationLocked
+        />
+        <View>
+          <Text className="text-white">Cerrar</Text>
+        </View>
+        <View className="h-full justify-end items-center pb-6">
+          <Pressable onPress={takePicture}>
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.shutterBtn,
+                  {
+                    opacity: pressed ? 0.5 : 1,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.shutterBtnInner,
+                    {
+                      backgroundColor: 'white',
+                    },
+                  ]}
+                />
+              </View>
+            )}
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1 }} className="bg-white">
+      <View style={styles.content}>
+        <View className="bg-cyan-700 p-8 rounded-xl">
+          <Text className="text-4xl font-semibold text-white">
+            Welcome to App!
+          </Text>
+          <Text className="text-xl mt-10 text-gray-100">
+            Lorem ipsum dolor sit amet consectetur adipisicing elit.
+          </Text>
+        </View>
+        <View className="w-full">
+          <View className="rounded-xl p-10 border border-dashed   border-cyan-800">
+            <Text className="text-center text-xl font-medium text-cyan-800">
+              Ingresa el código
+            </Text>
+            <View className="flex-row items-center   gap-4">
+              <TextInput
+                className="border border-dashed   rounded-lg px-4 py-3  mt-8 border-cyan-800 w-4/5"
+                placeholder="MM3KL0"
+                placeholderTextColor={'#DED9D9'}
+                value={uri ?? ''}
+                onChangeText={setUri}
+              />
+              <TouchableOpacity onPress={openCamera}>
+                <MaterialIcons
+                  name="photo-camera"
+                  size={28}
+                  color="#155e75"
+                  className="mt-6"
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View className="flex-row justify-center mt-16">
+            <TouchableOpacity className="bg-cyan-800 py-4 px-8 rounded-lg">
+              <Text className="text-white">Agregar trabajo</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        {showCamera && renderCamera()}
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -84,15 +154,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  content: {
+    flex: 1,
+    margin: 32,
+    gap: 16,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  cameraContainer: StyleSheet.absoluteFillObject,
+  camera: StyleSheet.absoluteFillObject,
+  shutterBtn: {
+    backgroundColor: 'transparent',
+    borderWidth: 5,
+    borderColor: 'white',
+    width: 85,
+    height: 85,
+    borderRadius: 45,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shutterBtnInner: {
+    width: 70,
+    height: 70,
+    borderRadius: 50,
   },
 });
