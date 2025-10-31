@@ -1,15 +1,18 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import TextRecognition from '@react-native-ml-kit/text-recognition';
+import TextRecognition, {
+  TextRecognitionScript,
+} from '@react-native-ml-kit/text-recognition';
+
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
-  Pressable,
-  StyleSheet,
+  Button,
+  IconButton,
+  RadioButton,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+} from 'react-native-paper';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -17,7 +20,6 @@ export default function HomeScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
   const [uri, setUri] = useState<string | null>(null);
-
   const [showCamera, setShowCamera] = useState(false);
 
   const openCamera = async () => {
@@ -33,27 +35,15 @@ export default function HomeScreen() {
     const photo = await ref.current?.takePictureAsync();
 
     // if (photo?.uri) setUri(photo.uri);
+
     if (photo?.uri) {
       try {
-        const result = await TextRecognition.recognize(photo!.uri);
-        // setUri(result.text);
+        const result = await TextRecognition.recognize(
+          photo.uri,
+          TextRecognitionScript.CHINESE
+        );
 
-        // Combina los bloques detectados
-        const allBlocks = result.blocks || [];
-
-        console.log(allBlocks);
-
-        // Filtra caracteres individuales en columna
-        const verticalLetters = allBlocks
-          .flatMap((block) =>
-            block.lines.flatMap((line) => line.text.split(''))
-          )
-          .filter((char) => /[A-Za-z0-9]/.test(char));
-
-        // Une los caracteres verticales
-        const combined = verticalLetters.join('');
-
-        setUri(combined);
+        setUri(result.text);
       } catch (error) {
         console.log(error);
       }
@@ -104,46 +94,77 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} className="bg-white">
-      <View style={styles.content}>
-        <View className="bg-cyan-700 p-8 rounded-xl">
-          <Text className="text-4xl font-semibold text-white">
-            Welcome to App!
-          </Text>
-          <Text className="text-xl mt-10 text-gray-100">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit.
-          </Text>
-        </View>
-        <View className="w-full">
-          <View className="rounded-xl p-10 border border-dashed   border-cyan-800">
-            <Text className="text-center text-xl font-medium text-cyan-800">
-              Ingresa el código
+      <ScrollView>
+        <View style={styles.content}>
+          <View className="bg-cyan-700 p-8 rounded-xl">
+            <Text className="text-4xl font-semibold text-white">
+              Welcome to App!
             </Text>
-            <View className="flex-row items-center   gap-4">
-              <TextInput
-                className="border border-dashed   rounded-lg px-4 py-3  mt-8 border-cyan-800 w-4/5"
-                placeholder="MM3KL0"
-                placeholderTextColor={'#DED9D9'}
-                value={uri ?? ''}
-                onChangeText={setUri}
-              />
-              <TouchableOpacity onPress={openCamera}>
-                <MaterialIcons
+            <Text className="text-xl mt-10 text-gray-100">
+              Lorem ipsum dolor sit amet consectetur adipisicing elit.
+            </Text>
+          </View>
+
+          <View className="w-full">
+            <View className="">
+              {/* <Text className="text-center text-xl font-medium text-cyan-800">
+              Ingresa el código
+              </Text> */}
+              <View className="flex-row justify-between  items-center gap-4">
+                <View className="w-4/5">
+                  {/* <TextInput
+                  className="border border-dashed   rounded-lg px-4 py-3 mt-5  border-cyan-800"
+                  placeholder="MM3KL0"
+                  placeholderTextColor={'#DED9D9'}
+                  value={uri ?? ''}
+                  onChangeText={setUri}
+                  /> */}
+                  <TextInput mode="outlined" label="Código de serie" />
+                </View>
+                <View className="">
+                  <IconButton icon="camera" mode="contained" />
+                  {/* <TouchableOpacity onPress={openCamera}>
+                  <MaterialIcons
                   name="photo-camera"
                   size={28}
                   color="#155e75"
-                  className="mt-6"
-                />
-              </TouchableOpacity>
+                  />
+                  </TouchableOpacity> */}
+                </View>
+              </View>
+
+              <View className="mt-5">
+                <Text variant="bodyLarge">Tipo de trabajo</Text>
+                <RadioButton.Group
+                  onValueChange={(value) => console.log(value)}
+                  value={'second'}
+                >
+                  <RadioButton.Item label="Estandar" value="first" />
+                  <RadioButton.Item label="Según plano" value="second" />
+                </RadioButton.Group>
+              </View>
+              <View className="items-center">
+                <IconButton icon="cloud-upload" mode="contained" size={30} />
+              </View>
+              <View>
+                <TextInput mode="outlined" label="Precio venta tarro" />
+              </View>
+            </View>
+            <View className="flex-row justify-center mt-16">
+              <Button
+                onPress={() => router.push('/modal')}
+                mode="contained"
+                icon="briefcase-plus"
+                contentStyle={{ flexDirection: 'row-reverse' }}
+                className="py-2 px-4"
+              >
+                Agregar trabajo
+              </Button>
             </View>
           </View>
-          <View className="flex-row justify-center mt-16">
-            <TouchableOpacity className="bg-cyan-800 py-4 px-8 rounded-lg">
-              <Text className="text-white">Agregar trabajo</Text>
-            </TouchableOpacity>
-          </View>
+          {showCamera && renderCamera()}
         </View>
-        {showCamera && renderCamera()}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
