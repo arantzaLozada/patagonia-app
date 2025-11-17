@@ -10,7 +10,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        myColor: '#113664',
+        myColor: '#3F5F90',
+        lavandaColor: '#e9ddf8',
       },
     },
   },

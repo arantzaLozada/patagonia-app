@@ -1,26 +1,40 @@
-import TextRecognition, {
-  TextRecognitionScript,
-} from '@react-native-ml-kit/text-recognition';
+import { AppbarHeader } from '@/components/appbar-header';
+import { createContainerWork, WorkPayload } from '@/services/containerService';
 
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
+  Divider,
   IconButton,
   RadioButton,
   Text,
   TextInput,
 } from 'react-native-paper';
 
-import { SafeAreaView } from 'react-native-safe-area-context';
+type PhotoAction = 'take-photo' | 'upload-photo';
 
 export default function HomeScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const ref = useRef<CameraView>(null);
+  const router = useRouter();
+
   const [uri, setUri] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [succces, setSuccces] = useState(false);
+
+  const [formContainer, setFormContainer] = useState<WorkPayload>({
+    record_id: '',
+    job: 'estandar',
+    file_plane: null,
+    price: 0,
+    comments: '',
+  });
 
   const openCamera = async () => {
     // si no hay permiso, pedirlo antes
@@ -34,24 +48,78 @@ export default function HomeScreen() {
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
 
-    // if (photo?.uri) setUri(photo.uri);
-
     if (photo?.uri) {
-      try {
-        const result = await TextRecognition.recognize(
-          photo.uri,
-          TextRecognitionScript.CHINESE
-        );
+      setUri('foto.jpg');
 
-        setUri(result.text);
-      } catch (error) {
-        console.log(error);
-      }
+      const file = {
+        uri: photo.uri,
+        type: 'image/jpeg',
+        name: 'photo.jpg',
+      };
+
+      setFormContainer((prev) => ({
+        ...prev,
+        file_plane: file,
+      }));
+    }
+
+    // if (photo?.uri) {
+    //   try {
+    //     const result = await TextRecognition.recognize(
+    //       photo.uri,
+    //       TextRecognitionScript.CHINESE
+    //     );
+
+    //     setUri(result.text);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // }
+  };
+
+  const uploadFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        type: '*/*',
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const photo = result.assets[0];
+
+      setUri(photo.name);
+
+      const file = {
+        uri: photo.uri,
+        type: photo.mimeType,
+        name: photo.name,
+      };
+
+      setFormContainer((prev) => ({
+        ...prev,
+        file_plane: file,
+      }));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleTakePhotoOrUploadFile = (value: PhotoAction) => {
+    switch (value) {
+      case 'take-photo':
+        takePicture();
+        setShowCamera(false);
+        break;
+
+      case 'upload-photo':
+        uploadFile();
+        break;
     }
   };
 
   const renderCamera = () => {
-    if (uri) return null;
+    // if (uri) return null;
     return (
       <View style={styles.cameraContainer}>
         <CameraView
@@ -63,10 +131,15 @@ export default function HomeScreen() {
           responsiveOrientationWhenOrientationLocked
         />
         <View>
-          <Text className="text-white">Cerrar</Text>
+          <IconButton
+            icon="close"
+            size={30}
+            mode="contained"
+            onPress={() => setShowCamera(false)}
+          />
         </View>
         <View className="h-full justify-end items-center pb-6">
-          <Pressable onPress={takePicture}>
+          <Pressable onPress={() => handleTakePhotoOrUploadFile('take-photo')}>
             {({ pressed }) => (
               <View
                 style={[
@@ -92,80 +165,170 @@ export default function HomeScreen() {
     );
   };
 
+  const handleSubmit = async () => {
+    if (!formContainer.record_id) {
+      alert('Por favor completa el código de serie.');
+      return;
+    }
+    setLoading(true);
+
+    try {
+      await createContainerWork(formContainer);
+      // alert('Trabajo guardado exitosamente 🎉');
+      // router.push('/(tabs)/work-done');
+      setSuccces(true);
+      setFormContainer({
+        record_id: '',
+        job: 'estandar',
+        file_plane: null,
+        price: 0,
+        comments: '',
+      });
+      setUri(null);
+    } catch {
+      alert('Hubo un error al guardar el trabajo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-white">
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <AppbarHeader />
+
       <ScrollView>
         <View style={styles.content}>
-          <View className="bg-cyan-700 p-8 rounded-xl">
-            <Text className="text-4xl font-semibold text-white">
-              Welcome to App!
-            </Text>
-            <Text className="text-xl mt-10 text-gray-100">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit.
-            </Text>
-          </View>
+          <Text
+            variant="headlineSmall"
+            style={{ color: '#113664', fontWeight: '700' }}
+          >
+            Agregar trabajo
+          </Text>
+          <Divider />
 
           <View className="w-full">
             <View className="">
-              {/* <Text className="text-center text-xl font-medium text-cyan-800">
-              Ingresa el código
-              </Text> */}
               <View className="flex-row justify-between  items-center gap-4">
-                <View className="w-4/5">
-                  {/* <TextInput
-                  className="border border-dashed   rounded-lg px-4 py-3 mt-5  border-cyan-800"
-                  placeholder="MM3KL0"
-                  placeholderTextColor={'#DED9D9'}
-                  value={uri ?? ''}
-                  onChangeText={setUri}
-                  /> */}
-                  <TextInput mode="outlined" label="Código de serie" />
-                </View>
-                <View className="">
-                  <IconButton icon="camera" mode="contained" />
-                  {/* <TouchableOpacity onPress={openCamera}>
-                  <MaterialIcons
-                  name="photo-camera"
-                  size={28}
-                  color="#155e75"
+                <View className="w-full">
+                  <TextInput
+                    mode="outlined"
+                    label="Código de serie*"
+                    autoCapitalize="characters"
+                    value={formContainer.record_id}
+                    onChangeText={(value) =>
+                      setFormContainer((prev) => ({
+                        ...prev,
+                        record_id: value,
+                      }))
+                    }
                   />
-                  </TouchableOpacity> */}
                 </View>
               </View>
 
               <View className="mt-5">
                 <Text variant="bodyLarge">Tipo de trabajo</Text>
                 <RadioButton.Group
-                  onValueChange={(value) => console.log(value)}
-                  value={'second'}
+                  onValueChange={(job) =>
+                    setFormContainer((prev) => ({
+                      ...prev,
+                      job: job as 'estandar' | 'plano',
+                    }))
+                  }
+                  value={formContainer.job}
                 >
-                  <RadioButton.Item label="Estandar" value="first" />
-                  <RadioButton.Item label="Según plano" value="second" />
+                  <RadioButton.Item label="Estandar" value="estandar" />
+                  <RadioButton.Item label="Según plano" value="plano" />
                 </RadioButton.Group>
               </View>
-              <View className="items-center">
-                <IconButton icon="cloud-upload" mode="contained" size={30} />
+
+              {formContainer.job === 'plano' ? (
+                <View className="justify-center items-center my-4 gap-2 border py-5 rounded border-gray-500">
+                  <Button mode="contained" icon="camera" onPress={openCamera}>
+                    Tomar una foto
+                  </Button>
+
+                  <Text>ó</Text>
+                  <Button
+                    mode="contained-tonal"
+                    icon="cloud-upload"
+                    onPress={() => handleTakePhotoOrUploadFile('upload-photo')}
+                  >
+                    Subir un archivo
+                  </Button>
+                  {uri && <Text className="mt-2">{uri}</Text>}
+                </View>
+              ) : null}
+
+              <View className="my-2">
+                <TextInput
+                  keyboardType="numeric"
+                  mode="outlined"
+                  label="Precio venta tarro"
+                  value={formContainer.price as unknown as string}
+                  onChangeText={(value) =>
+                    setFormContainer((prev) => ({
+                      ...prev,
+                      price: value as unknown as number,
+                    }))
+                  }
+                />
               </View>
-              <View>
-                <TextInput mode="outlined" label="Precio venta tarro" />
+              <View className="mt-5">
+                <Text variant="bodyLarge" className="mb-4">
+                  Comentarios
+                </Text>
+                <TextInput
+                  mode="outlined"
+                  multiline
+                  textAlignVertical="top"
+                  style={{ height: 120 }}
+                  value={formContainer.comments}
+                  onChangeText={(value) =>
+                    setFormContainer((prev) => ({
+                      ...prev,
+                      comments: value,
+                    }))
+                  }
+                />
               </View>
             </View>
             <View className="flex-row justify-center mt-16">
               <Button
-                onPress={() => router.push('/modal')}
+                onPress={handleSubmit}
+                loading={loading}
                 mode="contained"
                 icon="briefcase-plus"
-                contentStyle={{ flexDirection: 'row-reverse' }}
+                contentStyle={{
+                  flexDirection: 'row-reverse',
+                  backgroundColor: '#113664',
+                }}
+                style={{ backgroundColor: '#113664' }}
                 className="py-2 px-4"
               >
-                Agregar trabajo
+                Guardar trabajo
               </Button>
             </View>
           </View>
-          {showCamera && renderCamera()}
         </View>
       </ScrollView>
-    </SafeAreaView>
+      {showCamera && renderCamera()}
+      {succces && (
+        <View style={styles.lottie}>
+          <LottieView
+            source={require('../../assets/succes.json')}
+            autoPlay
+            loop={false}
+            onAnimationFinish={() => {
+              {
+                setSuccces(false);
+                router.push('/(tabs)/work-done');
+              }
+            }}
+            style={{ width: 300, height: 300 }}
+          />
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -178,12 +341,19 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
+    marginTop: 12,
     margin: 32,
     gap: 16,
     justifyContent: 'space-between',
     overflow: 'hidden',
   },
-  cameraContainer: StyleSheet.absoluteFillObject,
+  cameraContainer: {
+    position: 'absolute',
+    top: 48,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
   camera: StyleSheet.absoluteFillObject,
   shutterBtn: {
     backgroundColor: 'transparent',
@@ -192,7 +362,7 @@ const styles = StyleSheet.create({
     width: 85,
     height: 85,
     borderRadius: 45,
-
+    marginBottom: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -200,5 +370,10 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 50,
+  },
+  lottie: {
+    position: 'absolute',
+    bottom: '30%',
+    right: '15%',
   },
 });
