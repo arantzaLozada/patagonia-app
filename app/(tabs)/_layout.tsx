@@ -10,7 +10,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#155e75',
+        tabBarActiveTintColor: '#3F5F90',
         headerShown: false,
         tabBarButton: HapticTab,
       }}
@@ -18,18 +18,27 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Inicio',
+          title: 'Agregar trabajo',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+            <IconSymbol size={28} name="add-box" color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="work-done"
         options={{
-          title: 'Trabajados',
+          title: 'Trabajos realizados',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <IconSymbol size={28} name="handyman" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="work-submit"
+        options={{
+          title: 'Trabajos entregados',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="home-repair-service" color={color} />
           ),
         }}
       />

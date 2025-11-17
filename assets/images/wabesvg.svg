@@ -1,0 +1,24 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">
+	<defs>
+		<linearGradient id="g1" x2="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(-110.487,-1386.603,1313.778,-104.684,-27.216,1469.547)">
+			<stop offset="0" stop-color="#3f5f90"/>
+			<stop offset="1" stop-color="#254777"/>
+		</linearGradient>
+		<linearGradient id="g2" x2="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(110.487,-1386.603,1313.778,104.684,1107.216,1395.874)">
+			<stop offset="0" stop-color="#3f5f90"/>
+			<stop offset="1" stop-color="#423cb5"/>
+		</linearGradient>
+		<linearGradient id="g3" x2="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(-110.487,-1386.603,1313.778,-104.684,-27.215,1346.988)">
+			<stop offset="0" stop-color="#3f5f90"/>
+			<stop offset="1" stop-color="#254777"/>
+		</linearGradient>
+	</defs>
+	<style>
+		.s0 { opacity: .2;fill: url(#g1) } 
+		.s1 { opacity: .5;fill: url(#g2) } 
+		.s2 { fill: url(#g3) } 
+	</style>
+	<path id="&lt;Path&gt;" class="s0" d="m0 957.85c0 0 162.97 234.79 339.74 234.79 176.78 0 270.69-88.39 411.56-88.39 140.87 0 207.17 140.87 328.7 140.87v-1124.2h-1080z"/>
+	<path id="&lt;Path&gt;" class="s1" d="m1080 884.18c0 0-162.97 234.78-339.74 234.78-176.78 0-270.69-88.38-411.56-88.38-140.87 0-207.17 140.87-328.7 140.87v-1124.2h1080z"/>
+	<path id="&lt;Path&gt;" class="s2" d="m0 835.3c0 0 162.97 234.78 339.74 234.78 176.78 0 270.69-88.39 411.56-88.39 140.87 0 207.17 140.87 328.7 140.87v-1124.19h-1080z"/>
+</svg>
